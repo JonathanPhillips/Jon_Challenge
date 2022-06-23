@@ -106,8 +106,8 @@ resource "aws_route_table_association" "rta-subnet2" {
 }
 
 # SECURITY GROUPS #
-resource "aws_security_group" "elb-sg" {
-  name   = "nginx_elb_sg"
+resource "aws_security_group" "alb-sg" {
+  name   = "nginx_alb_sg"
   vpc_id = aws_vpc.vpc.id
 
   #Allow HTTP from anywhere
@@ -166,20 +166,42 @@ resource "aws_security_group" "nginx-sg" {
 }
 
 # LOAD BALANCER #
-resource "aws_elb" "web" {
-  name = "nginx-elb"
-
+resource "aws-lb" "github-challenge" {
+  name = "nginx-alb"
+  
   subnets         = [aws_subnet.subnet1.id, aws_subnet.subnet2.id]
-  security_groups = [aws_security_group.elb-sg.id]
+  security_groups = [aws_security_group.alb-sg.id]
   instances       = [aws_instance.nginx1.id, aws_instance.nginx2.id]
 
-  listener {
-    instance_port     = 80
-    instance_protocol = "http"
-    lb_port           = 80
-    lb_protocol       = "http"
-  }
+  http_tcp_listeners = [
+    # Forward action is default, either when defined or undefined
+    {
+      port               = 80
+      protocol           = "HTTP"
+      target_group_index = 0
+      # action_type        = "forward"
+    },
+    {
+      port        = 81
+      protocol    = "HTTP"
+      action_type = "redirect"
+      redirect = {
+        port        = "443"
+        protocol    = "HTTPS"
+        status_code = "HTTP_301"
+      }
+    }
+   ]
+   https_listeners = [
+    {
+      port               = 443
+      protocol           = "HTTPS"
+      certificate_arn    = module.acm.acm_certificate_arn
+      target_group_index = 1
+    }
 }
+
+
 
 # INSTANCES #
 resource "aws_instance" "nginx1" {
@@ -236,6 +258,6 @@ resource "aws_instance" "nginx2" {
 # OUTPUT
 ##################################################################################
 
-output "aws_elb_public_dns" {
-  value = aws_elb.web.dns_name
+output "aws_alb_public_dns" {
+  value = aws_alb.web.dns_name
 }
