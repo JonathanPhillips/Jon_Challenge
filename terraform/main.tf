@@ -2,8 +2,6 @@
 # VARIABLES
 ##################################################################################
 
-variable "aws_access_key" {}
-variable "aws_secret_key" {}
 variable "private_key_path" {}
 variable "key_name" {}
 variable "region" {
@@ -119,6 +117,14 @@ resource "aws_security_group" "elb-sg" {
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
+  
+  #Allow HTTPS from anywhere
+  ingress {
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
 
   #allow all outbound
   egress {
@@ -196,7 +202,7 @@ resource "aws_instance" "nginx1" {
       "sudo yum install nginx -y",
       "sudo service nginx start",
       "sudo rm /usr/share/nginx/html/index.html",
-      "echo '<html><head><title>Blue Team Server</title></head><body style=\"background-color:#1F778D\"><p style=\"text-align: center;\"><span style=\"color:#FFFFFF;\"><span style=\"font-size:28px;\">Blue Team</span></span></p></body></html>' | sudo tee /usr/share/nginx/html/index.html"
+      "echo '<html><head><title>Hello World</title></head><body><h1>Hello World!</h1></body></html>' | sudo tee /usr/share/nginx/html/index.html"
     ]
   }
 }
@@ -221,7 +227,7 @@ resource "aws_instance" "nginx2" {
       "sudo yum install nginx -y",
       "sudo service nginx start",
       "sudo rm /usr/share/nginx/html/index.html",
-      "echo '<html><head><title>Green Team Server</title></head><body style=\"background-color:#77A032\"><p style=\"text-align: center;\"><span style=\"color:#FFFFFF;\"><span style=\"font-size:28px;\">Green Team</span></span></p></body></html>' | sudo tee /usr/share/nginx/html/index.html"
+      "echo '<html><head><title>Hello World</title></head><body><h1>Hello World!</h1></body></html>' | sudo tee /usr/share/nginx/html/index.html"
     ]
   }
 }
