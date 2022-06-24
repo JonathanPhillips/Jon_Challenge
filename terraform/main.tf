@@ -22,8 +22,6 @@ variable "subnet2_address_space" {
 ##################################################################################
 
 provider "aws" {
-  access_key = var.aws_access_key
-  secret_key = var.aws_secret_key
   region     = var.region
 }
 
@@ -166,40 +164,60 @@ resource "aws_security_group" "nginx-sg" {
 }
 
 # LOAD BALANCER #
-resource "aws-lb" "github-challenge" {
-  name = "nginx-alb"
-  
+resource "aws_lb" "nginx" {
+  name            = "nginx-alb"
+  internal        = false
   subnets         = [aws_subnet.subnet1.id, aws_subnet.subnet2.id]
   security_groups = [aws_security_group.alb-sg.id]
-  instances       = [aws_instance.nginx1.id, aws_instance.nginx2.id]
+  enable_deletion_protection = false
+}
 
-  http_tcp_listeners = [
-    # Forward action is default, either when defined or undefined
-    {
-      port               = 80
-      protocol           = "HTTP"
-      target_group_index = 0
-      # action_type        = "forward"
-    },
-    {
-      port        = 81
-      protocol    = "HTTP"
-      action_type = "redirect"
-      redirect = {
+resource "aws_lb_target_group" "nginx" {
+  name     = "nginx-alb-tg"
+  port     = 80
+  protocol = "HTTP"
+  vpc_id   = aws_vpc.vpc.id
+  
+}  
+  
+resource "aws_lb_listener" "nginx" {
+  load_balancer_arn = aws_lb.nginx.arn
+  port              = "80"
+
+  default_action {
+    type = "redirect"
+    redirect {
         port        = "443"
         protocol    = "HTTPS"
         status_code = "HTTP_301"
-      }
-    }
-   ]
-   https_listeners = [
-    {
-      port               = 443
-      protocol           = "HTTPS"
-      certificate_arn    = module.acm.acm_certificate_arn
-      target_group_index = 1
-    }
+        }
+  }
+  
 }
+
+resource "aws_lb_listener" "nginx-443" {
+  load_balancer_arn = aws_lb.nginx.arn
+  port              = "443"
+  protocol          = "HTTPS"
+  ssl_policy        = "ELBSecurityPolicy-2016-08"
+  certificate_arn   = "arn:aws:acm:us-east-1:686633914742:certificate/f50ec0c7-0e33-433c-bd35-c63f95d787b6"
+  default_action {
+    type            = "forward"
+    target_group_arn = aws_lb_target_group.nginx.arn
+  }
+
+}
+resource "aws_lb_target_group_attachment" "nginx1" {
+  target_group_arn = aws_lb_target_group.nginx.arn
+  target_id = aws_instance.nginx1.id
+  port             = 80
+}
+
+resource "aws_lb_target_group_attachment" "nginx2" {
+  target_group_arn = aws_lb_target_group.nginx.arn
+  target_id = aws_instance.nginx2.id
+  port             = 80
+} 
 
 
 
@@ -210,7 +228,7 @@ resource "aws_instance" "nginx1" {
   subnet_id              = aws_subnet.subnet1.id
   vpc_security_group_ids = [aws_security_group.nginx-sg.id]
   key_name               = var.key_name
-
+  
   connection {
     type        = "ssh"
     host        = self.public_ip
@@ -235,7 +253,7 @@ resource "aws_instance" "nginx2" {
   subnet_id              = aws_subnet.subnet2.id
   vpc_security_group_ids = [aws_security_group.nginx-sg.id]
   key_name               = var.key_name
-
+  
   connection {
     type        = "ssh"
     host        = self.public_ip
@@ -258,6 +276,6 @@ resource "aws_instance" "nginx2" {
 # OUTPUT
 ##################################################################################
 
-output "aws_alb_public_dns" {
-  value = aws_alb.web.dns_name
+output "aws_lb_public_dns" {
+  value = aws_lb.nginx.dns_name
 }
