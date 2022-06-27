@@ -13,3 +13,12 @@ To run this demo, make sure you have Terraform installed and clone this repo int
 
 ### 
 This terraform plan will create a VPC with two subnets, 2 EC2 instances running NGINX, and an ALB in front of the 2 instances.
+
+
+## Testing with Terratest (In Progress)
+For the test, you will need to install GoLang
+cd into test and 
+* go mod init test
+* go mod tidy
+To run the test it self which will do the same terraform init and terraform apply, it will also validate the public IP is responding with a 200 code and the Hello World page:
+* go test -v -run TestTerraformAwsHelloWorldExample -timeout 30m
