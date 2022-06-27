@@ -9,7 +9,7 @@ To run this demo, make sure you have Terraform installed and clone this repo int
 
 * terraform init
 * terraform plan -out github.tfplan
-* terraform apply "github.tfplan
+* terraform apply "github.tfplan"
 
 ### 
 This terraform plan will create a VPC with two subnets, 2 EC2 instances running NGINX, and an ALB in front of the 2 instances.
