@@ -214,6 +214,7 @@ resource "aws_lb_target_group_attachment" "nginx2" {
 
 
 # INSTANCES #
+# I realize I am repeating myself here. Need to optimize the code.
 resource "aws_instance" "nginx1" {
   ami                    = data.aws_ami.aws-linux.id
   instance_type          = "t2.micro"
